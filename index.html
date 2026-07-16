@@ -3,1206 +3,561 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>🐴 小马快跑</title>
+    <title>小马快跑</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #2C5F8A;
-            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
-        }
-
         body {
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: manipulation;
+        }
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            touch-action: none;
         }
-
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            height: 100%;
-            max-height: 800px;
-            overflow: hidden;
-            background: #87CEEB;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        #start-screen, #game-over-screen {
+        canvas { display: block; max-width: 100%; max-height: 100%; }
+        #ui {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .score-box {
+            background: rgba(255,255,255,0.85);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 10;
+            z-index: 20;
+            backdrop-filter: blur(5px);
         }
-
-        #start-screen.hidden, #game-over-screen.hidden {
-            display: none;
-        }
-
-        .panel {
-            background: linear-gradient(180deg, #FFF8DC 0%, #FFE4B5 100%);
-            border-radius: 25px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 2px 10px rgba(255,255,255,0.8);
-            border: 4px solid #FFD700;
-            max-width: 85%;
-            animation: popIn 0.5s ease;
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
+        .hidden { display: none !important; }
         h1 {
-            font-size: 2.5rem;
-            color: #FF6B6B;
+            font-size: 44px;
+            color: #FF69B4;
+            text-shadow: 3px 3px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF;
             margin-bottom: 15px;
-            text-shadow: 2px 2px 0 #FFB6C1;
-            -webkit-text-stroke: 1px #FF1493;
+            animation: bounce 1s infinite;
         }
-
-        h2 {
-            font-size: 2rem;
-            color: #FF6B6B;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 0 #FFB6C1;
-        }
-
-        .subtitle {
-            font-size: 1rem;
-            color: #8B7355;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .score-box {
-            background: linear-gradient(135deg, #FFD700, #FFA500);
-            border-radius: 15px;
-            padding: 15px 30px;
-            margin: 15px 0;
-            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.4);
-        }
-
-        .score-box .label {
-            font-size: 1rem;
-            color: #8B4513;
-            font-weight: bold;
-        }
-
-        .score-box .value {
-            font-size: 2.5rem;
-            color: #FFF;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .high-score-box {
-            font-size: 1rem;
-            color: #8B7355;
-            margin: 15px 0;
-            padding: 8px 20px;
-            background: rgba(255,255,255,0.6);
-            border-radius: 20px;
-            border: 2px dashed #DEB887;
-        }
-
-        button {
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+        h2 { font-size: 34px; color: #FFF; margin-bottom: 10px; }
+        .btn {
+            padding: 14px 36px;
+            font-size: 22px;
+            background: linear-gradient(135deg, #FF69B4, #FF8C00);
             color: white;
             border: none;
             border-radius: 30px;
             cursor: pointer;
+            margin-top: 18px;
+            box-shadow: 0 5px 15px rgba(255,105,180,0.4);
             transition: transform 0.15s;
-            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
-            margin-top: 15px;
-            -webkit-appearance: none;
         }
-
-        button:active {
-            transform: scale(0.92);
-        }
-
-        #score-board {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 10px 18px;
-            border-radius: 20px;
-            z-index: 5;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
-
-        #coin-board {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: white;
-            background: rgba(255, 215, 0, 0.7);
-            padding: 10px 18px;
-            border-radius: 20px;
-            z-index: 5;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
-        .mobile-hint {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.9);
-            background: rgba(0,0,0,0.3);
-            padding: 8px 18px;
-            border-radius: 15px;
-            z-index: 5;
-            pointer-events: none;
-            line-height: 1.5;
-            text-align: center;
-        }
+        .btn:active { transform: scale(0.95); }
+        .tips { color: #FFF; font-size: 15px; margin-top: 25px; text-align: center; line-height: 2; }
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
     </style>
 </head>
 <body>
-    <div id="game-container">
+    <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
-        
-        <div id="score-board">
-            🏆 得分: <span id="score">0</span>
+        <div id="ui">
+            <div class="score-box">金币: <span id="score">0</span></div>
         </div>
-        
-        <div id="coin-board">
-            💰 金币: <span id="coins">0</span>
-        </div>
-
-        <div class="mobile-hint" id="hint">⬆️ 跳跃(可二段跳) | ⬇️ 下蹲(空中可加速下落)</div>
-
-        <div id="start-screen">
-            <div class="panel">
-                <h1>🐴 小马快跑</h1>
-                <p class="subtitle">空格/↑ 跳跃(可二段跳) | ↓/向下滑动 下蹲<br>空中下蹲可加速下落躲避飞鸟！<br>收集金币获得额外分数！</p>
-                <button id="start-btn">🎮 开始游戏</button>
-                <div class="high-score-box">🌟 最高分: <span id="high-score">0</span></div>
+        <div id="startScreen">
+            <h1>🐴 小马快跑 🐴</h1>
+            <button class="btn" id="startBtn">开始游戏</button>
+            <div class="tips">
+                <p>⬆️ 点击/空格 跳跃 · 可二段跳</p>
+                <p>⬇️ 按住↓/下滑 蹲下躲小鸟</p>
+                <p>💰 金币2分 · 🟢 绿色金币5分</p>
             </div>
         </div>
-
-        <div id="game-over-screen" class="hidden">
-            <div class="panel">
-                <h2>💔 游戏结束</h2>
-                <div class="score-box">
-                    <div class="label">最终得分</div>
-                    <div class="value" id="final-score">0</div>
-                </div>
-                <div class="high-score-box">🌟 最高分: <span id="new-high-score">0</span></div>
-                <button id="restart-btn">🔄 再玩一次</button>
-            </div>
+        <div id="gameOverScreen" class="hidden">
+            <h2>游戏结束</h2>
+            <p style="color:#FFD700;font-size:24px;">金币: <span id="finalScore">0</span></p>
+            <p style="color:#FFF;font-size:18px;">最多金币: <span id="highScore">0</span></p>
+            <button class="btn" id="restartBtn">再来一次</button>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const coinsElement = document.getElementById('coins');
-        const finalScoreElement = document.getElementById('final-score');
-        const highScoreElement = document.getElementById('high-score');
-        const newHighScoreElement = document.getElementById('new-high-score');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const startBtn = document.getElementById('start-btn');
-        const restartBtn = document.getElementById('restart-btn');
-        const hint = document.getElementById('hint');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScoreElement = document.getElementById('finalScore');
+    const highScoreElement = document.getElementById('highScore');
 
-        let gameState = 'start';
-        let score = 0;
-        let coins = 0;
-        let highScore = parseInt(localStorage.getItem('ponyRunHighScore')) || 0;
-        highScoreElement.textContent = highScore;
-        newHighScoreElement.textContent = highScore;
+    let W, H;
+    let gameState = 'start';
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('ponyRunHighScore')) || 0;
+    highScoreElement.textContent = highScore;
 
-        const GRAVITY = 0.55;
-        const JUMP_FORCE = -13;
-        const GAME_SPEED_INITIAL = 1.5;
-        const GAME_SPEED_MAX = 6;
-        let gameSpeed = GAME_SPEED_INITIAL;
-        let frameCount = 0;
+    // 物理参数
+    const GRAVITY = 0.5;
+    const JUMP_FORCE = -9;
+    const SPEED_START = 2.5;
+    const SPEED_MAX = 7;
 
-        const pony = {
-            x: 80,
-            y: 0,
-            width: 60,
-            height: 60,
-            normalHeight: 60,
-            crouchHeight: 35,
-            velocityY: 0,
-            isJumping: false,
-            isCrouching: false,
-            jumpCount: 0
-        };
+    let gameSpeed, frameCount, lastObstTime, lastCoinTime;
+    const ground = { y: 0 };
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // 小马
+    const pony = {
+        x: 80, y: 0, width: 50, height: 60,
+        vy: 0, isJumping: false, jumpCount: 0,
+        isCrouching: false, normalH: 60, crouchH: 35
+    };
 
-        function playSound(type) {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            if (type === 'jump') {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.15);
-            } else if (type === 'doubleJump') {
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.12);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.15);
-            } else if (type === 'coin') {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
-                oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.15);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.2);
-            } else if (type === 'gameOver') {
-                oscillator.type = 'sawtooth';
-                oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.5);
-            } else if (type === 'start') {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
-                oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
-                oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
-                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.3);
-            }
+    let obstacles = [], coins = [], particles = [], clouds = [];
+
+    // 音效
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        const t = audioCtx.currentTime;
+        switch(type) {
+            case 'jump':
+                o.type='sine'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(600,t+0.15);
+                g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.15);
+                o.start(t); o.stop(t+0.15); break;
+            case 'doubleJump':
+                o.type='sine'; o.frequency.setValueAtTime(400,t); o.frequency.exponentialRampToValueAtTime(850,t+0.12);
+                g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.12);
+                o.start(t); o.stop(t+0.12); break;
+            case 'coin':
+                o.type='sine'; o.frequency.setValueAtTime(500,t); o.frequency.setValueAtTime(700,t+0.05); o.frequency.setValueAtTime(900,t+0.1);
+                g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.15);
+                o.start(t); o.stop(t+0.15); break;
+            case 'gameOver':
+                o.type='triangle'; o.frequency.setValueAtTime(300,t); o.frequency.setValueAtTime(200,t+0.2); o.frequency.setValueAtTime(100,t+0.4);
+                g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.5);
+                o.start(t); o.stop(t+0.5); break;
+            case 'start':
+                o.type='sine'; o.frequency.setValueAtTime(440,t); o.frequency.setValueAtTime(554,t+0.1); o.frequency.setValueAtTime(659,t+0.2);
+                g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.01,t+0.3);
+                o.start(t); o.stop(t+0.3); break;
         }
+    }
 
-        const ground = { y: 0, height: 90 };
-        let obstacles = [];
-        let coinsList = [];
-        let clouds = [];
-        let particles = [];
-        let mountains = [];
-        let trees = [];
+    function resize() {
+        W = window.innerWidth; H = window.innerHeight;
+        canvas.width = W; canvas.height = H;
+        ground.y = H * 0.75;
+        pony.y = ground.y - pony.height;
+        initClouds();
+    }
 
-        // Touch handling for swipe
-        let touchStartY = 0;
-        let touchStartTime = 0;
-
-        function resizeCanvas() {
-            const container = document.getElementById('game-container');
-            canvas.width = container.clientWidth;
-            canvas.height = container.clientHeight;
-            ground.y = canvas.height - ground.height;
-            pony.y = ground.y - pony.height;
+    function initClouds() {
+        clouds = [];
+        for (let i = 0; i < 5; i++) {
+            clouds.push({ x: Math.random()*W, y: Math.random()*(ground.y*0.45), w: 70+Math.random()*60, spd: 0.3+Math.random()*0.5 });
         }
+    }
 
-        function drawSky() {
-            const gradient = ctx.createLinearGradient(0, 0, 0, ground.y);
-            gradient.addColorStop(0, '#4FC3F7');
-            gradient.addColorStop(0.5, '#81D4FA');
-            gradient.addColorStop(1, '#B3E5FC');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, ground.y);
-        }
-
-        function drawSun() {
-            const sunX = canvas.width * 0.8;
-            const sunY = canvas.height * 0.12;
-            const sunSize = 35;
-            
-            ctx.save();
-            ctx.shadowColor = '#FFD700';
-            ctx.shadowBlur = 30;
-            ctx.fillStyle = '#FFD700';
+    // ===== 绘制 =====
+    function drawBg() {
+        // 天空
+        const sky = ctx.createLinearGradient(0,0,0,ground.y);
+        sky.addColorStop(0,'#87CEEB'); sky.addColorStop(0.5,'#B0E0E6'); sky.addColorStop(1,'#98FB98');
+        ctx.fillStyle = sky; ctx.fillRect(0,0,W,ground.y);
+        // 太阳
+        ctx.fillStyle='#FFD700'; ctx.beginPath(); ctx.arc(W-80,55,30,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(255,215,0,0.25)'; ctx.beginPath(); ctx.arc(W-80,55,48,0,Math.PI*2); ctx.fill();
+        // 云
+        clouds.forEach(c => {
+            ctx.fillStyle='rgba(255,255,255,0.85)';
             ctx.beginPath();
-            ctx.arc(sunX, sunY, sunSize, 0, Math.PI * 2);
+            ctx.arc(c.x,c.y,c.w/2,0,Math.PI*2);
+            ctx.arc(c.x+c.w*0.4,c.y-4,c.w/3,0,Math.PI*2);
+            ctx.arc(c.x+c.w*0.7,c.y,c.w/2.5,0,Math.PI*2);
             ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            ctx.fillStyle = '#FFF176';
-            ctx.beginPath();
-            ctx.arc(sunX - 8, sunY - 5, sunSize * 0.5, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.restore();
-        }
-
-        function drawMountains() {
-            mountains = mountains.filter(m => m.x > -200);
-            
-            if (mountains.length === 0 || mountains[mountains.length - 1].x < canvas.width - 150) {
-                mountains.push({
-                    x: canvas.width + Math.random() * 100,
-                    y: ground.y,
-                    width: 120 + Math.random() * 80,
-                    height: 80 + Math.random() * 60,
-                    color: ['#90A4AE', '#78909C', '#607D8B'][Math.floor(Math.random() * 3)]
-                });
-            }
-            
-            mountains.forEach(m => {
-                m.x -= gameSpeed * 0.2;
-                ctx.fillStyle = m.color;
-                ctx.beginPath();
-                ctx.moveTo(m.x, m.y);
-                ctx.lineTo(m.x + m.width / 2, m.y - m.height);
-                ctx.lineTo(m.x + m.width, m.y);
-                ctx.closePath();
-                ctx.fill();
-                
-                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.beginPath();
-                ctx.moveTo(m.x + m.width * 0.35, m.y - m.height * 0.6);
-                ctx.lineTo(m.x + m.width / 2, m.y - m.height);
-                ctx.lineTo(m.x + m.width * 0.5, m.y - m.height * 0.55);
-                ctx.closePath();
-                ctx.fill();
-            });
-        }
-
-        function drawClouds() {
-            clouds = clouds.filter(c => c.x > -150);
-            
-            if (clouds.length < 5 && Math.random() < 0.02) {
-                clouds.push({
-                    x: canvas.width + 50,
-                    y: 30 + Math.random() * 80,
-                    size: 25 + Math.random() * 20,
-                    speed: 0.5 + Math.random() * 0.5
-                });
-            }
-            
-            clouds.forEach(c => {
-                c.x -= c.speed;
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-                ctx.beginPath();
-                ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-                ctx.arc(c.x + c.size * 0.8, c.y - c.size * 0.2, c.size * 0.7, 0, Math.PI * 2);
-                ctx.arc(c.x + c.size * 1.5, c.y, c.size * 0.6, 0, Math.PI * 2);
-                ctx.fill();
-            });
-        }
-
-        function drawGround() {
-            const grassGradient = ctx.createLinearGradient(0, ground.y, 0, ground.y + 25);
-            grassGradient.addColorStop(0, '#66BB6A');
-            grassGradient.addColorStop(1, '#43A047');
-            ctx.fillStyle = grassGradient;
-            ctx.fillRect(0, ground.y, canvas.width, 25);
-            
-            const dirtGradient = ctx.createLinearGradient(0, ground.y + 25, 0, canvas.height);
-            dirtGradient.addColorStop(0, '#795548');
-            dirtGradient.addColorStop(1, '#5D4037');
-            ctx.fillStyle = dirtGradient;
-            ctx.fillRect(0, ground.y + 25, canvas.width, canvas.height - ground.y - 25);
-            
-            ctx.fillStyle = '#388E3C';
-            for (let i = 0; i < canvas.width; i += 20) {
-                const offset = (frameCount * 0.5 + i) % 30;
-                ctx.beginPath();
-                ctx.moveTo(offset, ground.y);
-                ctx.lineTo(offset + 4, ground.y - 10);
-                ctx.lineTo(offset + 8, ground.y);
-                ctx.fill();
-            }
-        }
-
-        function drawTrees() {
-            trees = trees.filter(t => t.x > -60);
-            
-            if (Math.random() < 0.015) {
-                trees.push({
-                    x: canvas.width + 20,
-                    y: ground.y - 5,
-                    type: Math.random() > 0.5 ? 'pine' : 'round'
-                });
-            }
-            
-            trees.forEach(t => {
-                t.x -= gameSpeed * 0.5;
-                
-                if (t.type === 'pine') {
-                    ctx.fillStyle = '#5D4037';
-                    ctx.fillRect(t.x + 8, t.y - 30, 10, 30);
-                    
-                    ctx.fillStyle = '#2E7D32';
-                    ctx.beginPath();
-                    ctx.moveTo(t.x, t.y - 20);
-                    ctx.lineTo(t.x + 13, t.y - 55);
-                    ctx.lineTo(t.x + 26, t.y - 20);
-                    ctx.fill();
-                    
-                    ctx.fillStyle = '#388E3C';
-                    ctx.beginPath();
-                    ctx.moveTo(t.x + 2, t.y - 35);
-                    ctx.lineTo(t.x + 13, t.y - 65);
-                    ctx.lineTo(t.x + 24, t.y - 35);
-                    ctx.fill();
-                } else {
-                    ctx.fillStyle = '#5D4037';
-                    ctx.fillRect(t.x + 10, t.y - 25, 8, 25);
-                    
-                    ctx.fillStyle = '#43A047';
-                    ctx.beginPath();
-                    ctx.arc(t.x + 14, t.y - 35, 18, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    ctx.fillStyle = '#66BB6A';
-                    ctx.beginPath();
-                    ctx.arc(t.x + 14, t.y - 42, 12, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
-        }
-
-        function drawPony() {
-            ctx.save();
-            const cx = pony.x + pony.width / 2;
-            let cy = pony.y + pony.height / 2;
-            
-            if (pony.isJumping && pony.velocityY > 0) {
-                ctx.translate(cx, cy);
-                ctx.rotate(Math.min(0.2, pony.velocityY * 0.02));
-                ctx.translate(-cx, -cy);
-            }
-            
-            const runCycle = Math.sin(frameCount * 0.3) * 5;
-            
-            if (pony.isCrouching) {
-                // Crouching pony
-                cy = pony.y + pony.height / 2;
-                
-                // Body - flattened
-                ctx.fillStyle = '#FF8A80';
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, 30, 14, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#FFAB91';
-                ctx.beginPath();
-                ctx.ellipse(cx - 5, cy - 2, 22, 10, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Head - lowered
-                ctx.fillStyle = '#FF8A80';
-                ctx.beginPath();
-                ctx.ellipse(cx + 20, cy + 2, 14, 12, 0.2, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Eye
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.arc(cx + 24, cy, 5, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#333';
-                ctx.beginPath();
-                ctx.arc(cx + 26, cy, 2.5, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Nose
-                ctx.fillStyle = '#FFCDD2';
-                ctx.beginPath();
-                ctx.ellipse(cx + 30, cy + 5, 3, 2, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Mane
-                ctx.fillStyle = '#FF7043';
-                ctx.beginPath();
-                ctx.moveTo(cx + 8, cy - 8);
-                ctx.lineTo(cx + 5, cy - 20);
-                ctx.lineTo(cx + 16, cy - 10);
-                ctx.fill();
-                
-                // Tail
-                ctx.fillStyle = '#FF7043';
-                ctx.beginPath();
-                ctx.moveTo(cx - 28, cy);
-                ctx.quadraticCurveTo(cx - 38, cy - 3, cx - 35, cy + 8);
-                ctx.quadraticCurveTo(cx - 30, cy + 5, cx - 26, cy + 3);
-                ctx.fill();
-                
-                // Legs - bent
-                ctx.fillStyle = '#D84315';
-                ctx.fillRect(cx - 18, cy + 8, 7, 12);
-                ctx.fillRect(cx - 5, cy + 8, 7, 12);
-                ctx.fillRect(cx + 5, cy + 8, 7, 12);
-                ctx.fillRect(cx + 18, cy + 8, 7, 12);
-                
-                // Hooves
-                ctx.fillStyle = '#5D4037';
-                ctx.beginPath();
-                ctx.ellipse(cx - 14.5, cy + 20, 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(cx - 1.5, cy + 20, 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(cx + 8.5, cy + 20, 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(cx + 21.5, cy + 20, 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                // Normal standing/running pony
-                // Body
-                ctx.fillStyle = '#FF8A80';
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, 28, 22, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#FFAB91';
-                ctx.beginPath();
-                ctx.ellipse(cx - 5, cy - 3, 20, 16, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Head
-                ctx.fillStyle = '#FF8A80';
-                ctx.beginPath();
-                ctx.ellipse(cx + 22, cy - 12, 16, 14, 0.2, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Eye
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.arc(cx + 26, cy - 16, 6, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#333';
-                ctx.beginPath();
-                ctx.arc(cx + 28, cy - 16, 3.5, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.arc(cx + 29, cy - 17, 1.5, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Nose
-                ctx.fillStyle = '#FFCDD2';
-                ctx.beginPath();
-                ctx.ellipse(cx + 34, cy - 10, 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Mane
-                ctx.fillStyle = '#FF7043';
-                ctx.beginPath();
-                ctx.moveTo(cx + 10, cy - 20);
-                ctx.lineTo(cx + 5, cy - 38);
-                ctx.lineTo(cx + 18, cy - 24);
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.moveTo(cx + 14, cy - 22);
-                ctx.lineTo(cx + 12, cy - 40);
-                ctx.lineTo(cx + 22, cy - 26);
-                ctx.fill();
-                
-                // Tail
-                ctx.fillStyle = '#FF7043';
-                ctx.beginPath();
-                ctx.moveTo(cx - 26, cy);
-                ctx.quadraticCurveTo(cx - 40, cy - 5, cx - 38, cy + 15);
-                ctx.quadraticCurveTo(cx - 30, cy + 8, cx - 24, cy + 5);
-                ctx.fill();
-                
-                // Legs
-                ctx.fillStyle = '#D84315';
-                const legW = 7;
-                const legH = 18;
-                
-                if (!pony.isJumping) {
-                    ctx.fillRect(cx - 18, cy + 15 + runCycle, legW, legH);
-                    ctx.fillRect(cx - 5, cy + 15 - runCycle, legW, legH);
-                    ctx.fillRect(cx + 5, cy + 15 + runCycle, legW, legH);
-                    ctx.fillRect(cx + 18, cy + 15 - runCycle, legW, legH);
-                } else {
-                    ctx.fillRect(cx - 18, cy + 15, legW, legH);
-                    ctx.fillRect(cx - 5, cy + 15, legW, legH);
-                    ctx.fillRect(cx + 5, cy + 12, legW, legH);
-                    ctx.fillRect(cx + 18, cy + 10, legW, legH);
-                }
-                
-                // Hooves
-                ctx.fillStyle = '#5D4037';
-                ctx.beginPath();
-                ctx.ellipse(cx - 14.5, cy + 33 + (pony.isJumping ? 0 : runCycle), 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(cx - 1.5, cy + 33 - (pony.isJumping ? 0 : runCycle), 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(cx + 8.5, cy + 30 + (pony.isJumping ? 0 : runCycle), 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(cx + 21.5, cy + 28 - (pony.isJumping ? 0 : runCycle), 4, 3, 0, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            ctx.restore();
-        }
-
-        function drawCoin(coin) {
-            const shimmer = Math.sin(frameCount * 0.15 + coin.x * 0.1) * 0.2 + 0.8;
-            
-            ctx.save();
-            ctx.shadowColor = '#FFD700';
-            ctx.shadowBlur = 10;
-            
-            // Outer ring
-            ctx.fillStyle = '#FFD700';
-            ctx.beginPath();
-            ctx.arc(coin.x + coin.size / 2, coin.y + coin.size / 2, coin.size / 2, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Inner circle
-            ctx.fillStyle = `rgba(255, 248, 150, ${shimmer})`;
-            ctx.beginPath();
-            ctx.arc(coin.x + coin.size / 2, coin.y + coin.size / 2, coin.size / 2.5, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Shine
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(coin.x + coin.size * 0.35, coin.y + coin.size * 0.35, coin.size * 0.15, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Dollar sign or star
-            ctx.fillStyle = '#FFA000';
-            ctx.font = `bold ${coin.size * 0.5}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('$', coin.x + coin.size / 2, coin.y + coin.size / 2);
-            
-            ctx.restore();
-        }
-
-        function drawObstacle(obstacle) {
-            ctx.save();
-            
-            if (obstacle.type === 'cactus') {
-                ctx.fillStyle = '#2E7D32';
-                ctx.fillRect(obstacle.x + obstacle.width * 0.35, obstacle.y, obstacle.width * 0.3, obstacle.height);
-                
-                ctx.fillStyle = '#388E3C';
-                ctx.fillRect(obstacle.x + obstacle.width * 0.35 + 2, obstacle.y + 2, obstacle.width * 0.3 - 4, obstacle.height - 4);
-                
-                ctx.fillStyle = '#2E7D32';
-                ctx.fillRect(obstacle.x, obstacle.y + obstacle.height * 0.3, obstacle.width * 0.4, obstacle.height * 0.15);
-                ctx.fillRect(obstacle.x + obstacle.width * 0.6, obstacle.y + obstacle.height * 0.5, obstacle.width * 0.4, obstacle.height * 0.15);
-                
-                ctx.fillStyle = '#4CAF50';
-                ctx.beginPath();
-                ctx.arc(obstacle.x + obstacle.width * 0.15, obstacle.y + obstacle.height * 0.3, 5, 0, Math.PI * 2);
-                ctx.arc(obstacle.x + obstacle.width * 0.85, obstacle.y + obstacle.height * 0.5, 5, 0, Math.PI * 2);
-                ctx.fill();
-            } else if (obstacle.type === 'rock') {
-                ctx.fillStyle = '#757575';
-                ctx.beginPath();
-                ctx.moveTo(obstacle.x + 5, obstacle.y + obstacle.height);
-                ctx.lineTo(obstacle.x + obstacle.width * 0.3, obstacle.y + 5);
-                ctx.lineTo(obstacle.x + obstacle.width * 0.7, obstacle.y);
-                ctx.lineTo(obstacle.x + obstacle.width - 5, obstacle.y + obstacle.height * 0.4);
-                ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height);
-                ctx.closePath();
-                ctx.fill();
-                
-                ctx.fillStyle = '#9E9E9E';
-                ctx.beginPath();
-                ctx.arc(obstacle.x + obstacle.width * 0.4, obstacle.y + obstacle.height * 0.3, 6, 0, Math.PI * 2);
-                ctx.fill();
-            } else if (obstacle.type === 'bird') {
-                const wingY = Math.sin(frameCount * 0.3) * 6;
-                
-                ctx.fillStyle = '#FFB300';
-                ctx.beginPath();
-                ctx.ellipse(obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2, obstacle.width / 2, obstacle.height / 2.5, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#FF8F00';
-                ctx.beginPath();
-                ctx.ellipse(obstacle.x + 2 + wingY, obstacle.y + obstacle.height * 0.35, 10, 5, -0.3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.ellipse(obstacle.x + obstacle.width - 2 - wingY, obstacle.y + obstacle.height * 0.35, 10, 5, 0.3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#FFF';
-                ctx.beginPath();
-                ctx.arc(obstacle.x + obstacle.width * 0.65, obstacle.y + obstacle.height * 0.4, 4, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#333';
-                ctx.beginPath();
-                ctx.arc(obstacle.x + obstacle.width * 0.67, obstacle.y + obstacle.height * 0.4, 2, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.fillStyle = '#FF5722';
-                ctx.beginPath();
-                ctx.moveTo(obstacle.x + obstacle.width * 0.8, obstacle.y + obstacle.height * 0.45);
-                ctx.lineTo(obstacle.x + obstacle.width * 0.9, obstacle.y + obstacle.height * 0.42);
-                ctx.lineTo(obstacle.x + obstacle.width * 0.8, obstacle.y + obstacle.height * 0.5);
-                ctx.closePath();
-                ctx.fill();
-            }
-            
-            ctx.restore();
-        }
-
-        function drawParticles() {
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                ctx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.life})`;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.08;
-                p.life -= 0.025;
-                p.size *= 0.97;
-            });
-        }
-
-        function createParticle(x, y, type) {
-            const colors = {
-                dust: { r: 139, g: 90, b: 43 },
-                gold: { r: 255, g: 215, b: 0 },
-                rainbow: { r: Math.floor(Math.random()*255), g: Math.floor(Math.random()*255), b: Math.floor(Math.random()*255) },
-                coin: { r: 255, g: 223, b: 100 }
-            };
-            const color = colors[type] || colors.dust;
-            
-            for (let i = 0; i < 10; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 5 - 2,
-                    size: Math.random() * 4 + 2,
-                    life: 1,
-                    r: color.r, g: color.g, b: color.b
-                });
-            }
-        }
-
-        function createObstacle() {
-            const types = ['cactus', 'rock', 'bird'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            let w, h, y;
-            
-            if (type === 'cactus') {
-                w = 35 + Math.random() * 15;
-                h = 50 + Math.random() * 35;
-                y = ground.y - h;
-            } else if (type === 'rock') {
-                w = 40 + Math.random() * 20;
-                h = 30 + Math.random() * 15;
-                y = ground.y - h;
-            } else {
-                w = 32 + Math.random() * 12;
-                h = 25 + Math.random() * 10;
-                y = ground.y - h - Math.random() * 70 - 40;
-            }
-            
-            obstacles.push({ x: canvas.width + 50, y, width: w, height: h, type });
-        }
-
-        function createCoin() {
-            const size = 22;
-            const x = canvas.width + 50;
-            const y = ground.y - Math.random() * 120 - 30;
-            
-            // 检查与障碍物是否重叠
-            for (const o of obstacles) {
-                if (x < o.x + o.width + 30 && x + size + 30 > o.x &&
-                    y < o.y + o.height + 20 && y + size + 20 > o.y) {
-                    return; // 重叠则不生成
-                }
-            }
-            
-            coinsList.push({
-                x: x,
-                y: y,
-                size: size,
-                collected: false
-            });
-        }
-
-        function update() {
-            // 根据下蹲状态调整高度
-            if (pony.isCrouching) {
-                pony.height = pony.crouchHeight;
-            } else {
-                pony.height = pony.normalHeight;
-            }
-            
-            // 地面下蹲时固定位置
-            if (pony.isCrouching && !pony.isJumping) {
-                pony.y = ground.y - pony.height;
-            }
-            
-            // 跳跃中下蹲：加速下落
-            if (pony.isJumping) {
-                const gravityMult = pony.isCrouching ? 2.2 : 1;
-                pony.velocityY += GRAVITY * gravityMult;
-                pony.y += pony.velocityY;
-                
-                if (pony.y >= ground.y - pony.height) {
-                    pony.y = ground.y - pony.height;
-                    pony.velocityY = 0;
-                    pony.isJumping = false;
-                    pony.jumpCount = 0;
-                }
-            }
-            
-            obstacles = obstacles.filter(o => o.x > -100);
-            obstacles.forEach(o => o.x -= gameSpeed);
-            
-            coinsList = coinsList.filter(c => c.x > -50 && !c.collected);
-            coinsList.forEach(c => c.x -= gameSpeed);
-            
-            frameCount++;
-        }
-
-        function checkCollision() {
-            const hitbox = { 
-                x: pony.x + 8, 
-                y: pony.y + (pony.isCrouching ? 5 : 8), 
-                w: pony.width - 16, 
-                h: pony.height - (pony.isCrouching ? 10 : 16)
-            };
-            
-            for (const o of obstacles) {
-                const oh = { x: o.x + 5, y: o.y + 5, w: o.width - 10, h: o.height - 10 };
-                
-                // Bird obstacle - can be avoided by crouching
-                if (o.type === 'bird' && pony.isCrouching) {
-                    continue;
-                }
-                
-                if (hitbox.x < oh.x + oh.w && hitbox.x + hitbox.w > oh.x &&
-                    hitbox.y < oh.y + oh.h && hitbox.y + hitbox.h > oh.y) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function checkCoinCollision() {
-            const hitbox = { 
-                x: pony.x + 8, 
-                y: pony.y + 8, 
-                w: pony.width - 16, 
-                h: pony.height - 16
-            };
-            
-            for (const coin of coinsList) {
-                if (coin.collected) continue;
-                
-                const ch = { 
-                    x: coin.x, 
-                    y: coin.y, 
-                    w: coin.size, 
-                    h: coin.size 
-                };
-                
-                if (hitbox.x < ch.x + ch.w && hitbox.x + hitbox.w > ch.x &&
-                    hitbox.y < ch.y + ch.h && hitbox.y + hitbox.h > ch.y) {
-                    coin.collected = true;
-                    coins++;
-                    score += 50;
-                    coinsElement.textContent = coins;
-                    playSound('coin');
-                    createParticle(coin.x + coin.size / 2, coin.y + coin.size / 2, 'coin');
-                }
-            }
-        }
-
-        function jump() {
-            if (gameState !== 'playing') return;
-            
-            if (!pony.isJumping && !pony.isCrouching) {
-                pony.velocityY = JUMP_FORCE;
-                pony.isJumping = true;
-                pony.jumpCount = 1;
-                pony.isCrouching = false;
-                playSound('jump');
-                createParticle(pony.x + pony.width / 2, pony.y + pony.height, 'dust');
-            } else if (pony.isJumping && pony.jumpCount < 2) {
-                pony.velocityY = JUMP_FORCE * 0.85;
-                pony.jumpCount = 2;
-                playSound('doubleJump');
-                createParticle(pony.x + pony.width / 2, pony.y + pony.height / 2, 'rainbow');
-            }
-        }
-
-        function crouch(active) {
-            if (gameState === 'playing') {
-                pony.isCrouching = active;
-            }
-        }
-
-        function startGame() {
-            gameState = 'playing';
-            score = 0;
-            coins = 0;
-            gameSpeed = GAME_SPEED_INITIAL;
-            obstacles = [];
-            coinsList = [];
-            particles = [];
-            mountains = [];
-            trees = [];
-            clouds = [];
-            
-            pony.y = ground.y - pony.normalHeight;
-            pony.height = pony.normalHeight;
-            pony.velocityY = 0;
-            pony.isJumping = false;
-            pony.isCrouching = false;
-            pony.jumpCount = 0;
-            
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            scoreElement.textContent = score;
-            coinsElement.textContent = coins;
-            hint.innerHTML = '⬆️ 跳跃(可二段跳) | ⬇️ 下蹲(空中可加速下落)';
-            playSound('start');
-            
-            for (let i = 0; i < 3; i++) {
-                clouds.push({
-                    x: Math.random() * canvas.width,
-                    y: 30 + Math.random() * 60,
-                    size: 25 + Math.random() * 20,
-                    speed: 0.5 + Math.random() * 0.5
-                });
-            }
-            
-            gameLoop();
-        }
-
-        function gameOver() {
-            gameState = 'gameover';
-            playSound('gameOver');
-            
-            const finalScore = Math.floor(score);
-            if (finalScore > highScore) {
-                highScore = finalScore;
-                localStorage.setItem('ponyRunHighScore', highScore);
-                highScoreElement.textContent = highScore;
-                newHighScoreElement.textContent = highScore;
-            }
-            
-            finalScoreElement.textContent = finalScore;
-            gameOverScreen.classList.remove('hidden');
-            hint.textContent = '点击屏幕重新开始';
-            createParticle(pony.x + pony.width / 2, pony.y + pony.height / 2, 'gold');
-        }
-
-        let lastObstacleTime = 0;
-        let lastCoinTime = 0;
-
-        function gameLoop() {
-            if (gameState !== 'playing') return;
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            drawSky();
-            drawSun();
-            drawMountains();
-            drawClouds();
-            drawTrees();
-            drawGround();
-            
-            coinsList.forEach(drawCoin);
-            
-            drawPony();
-            obstacles.forEach(drawObstacle);
-            drawParticles();
-            
-            update();
-            
-            const now = Date.now();
-            // 障碍物间隔随速度增加而缩短，范围 2500ms ~ 1200ms
-            const obstacleInterval = Math.max(1200, 2500 - gameSpeed * 200);
-            if (now - lastObstacleTime > obstacleInterval) {
-                createObstacle();
-                lastObstacleTime = now;
-            }
-            
-            if (now - lastCoinTime > 1000) {
-                createCoin();
-                if (Math.random() < 0.4) {
-                    setTimeout(createCoin, 300);
-                }
-                lastCoinTime = now;
-            }
-            
-            score += 0.12;
-            scoreElement.textContent = Math.floor(score);
-            
-            checkCoinCollision();
-            
-            // 平滑加速：每帧增加少量速度，上限为 GAME_SPEED_MAX
-            if (gameSpeed < GAME_SPEED_MAX) {
-                gameSpeed += 0.0008;
-            }
-            
-            // 每500分额外加速一次（保留里程碑特效）
-            if (Math.floor(score) % 500 === 0 && Math.floor(score) > 0) {
-                gameSpeed = Math.min(GAME_SPEED_MAX, gameSpeed + 0.15);
-                createParticle(pony.x + pony.width / 2, pony.y, 'rainbow');
-            }
-            
-            if (checkCollision()) {
-                gameOver();
-                return;
-            }
-            
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Input handlers
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                e.preventDefault();
-                if (gameState === 'start' || gameState === 'gameover') {
-                    startGame();
-                } else {
-                    jump();
-                }
-            } else if (e.code === 'ArrowDown') {
-                e.preventDefault();
-                if (gameState === 'playing') {
-                    crouch(true);
-                }
-            }
         });
+        // 地面
+        ctx.fillStyle='#567D46'; ctx.fillRect(0,ground.y,W,H-ground.y);
+        ctx.fillStyle='#8B4513'; ctx.fillRect(0,ground.y+8,W,12);
+        // 草
+        for(let i=0;i<W;i+=30){ ctx.fillStyle='#228B22'; ctx.beginPath(); ctx.moveTo(i+10,ground.y); ctx.lineTo(i+15,ground.y-10); ctx.lineTo(i+20,ground.y); ctx.closePath(); ctx.fill(); }
+        for(let i=0;i<W;i+=80){ ctx.fillStyle='#4A7C23'; ctx.beginPath(); ctx.moveTo(i+20,ground.y); ctx.lineTo(i+35,ground.y-18); ctx.lineTo(i+50,ground.y); ctx.closePath(); ctx.fill(); }
+    }
 
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'ArrowDown') {
-                crouch(false);
-            }
+    function drawPony() {
+        ctx.save();
+        ctx.translate(pony.x+pony.width/2, pony.y+pony.height/2);
+        if(pony.isJumping && !pony.isCrouching) ctx.rotate(-0.15);
+        if(pony.isCrouching) ctx.scale(1.2,0.75);
+
+        const px=-pony.width/2, py=-pony.height/2;
+        // 身体
+        ctx.fillStyle='#FFB6C1'; ctx.beginPath(); ctx.ellipse(px+pony.width*0.5,py+pony.height*0.6,pony.width*0.35,pony.height*0.25,0,0,Math.PI*2); ctx.fill();
+        // 头
+        ctx.fillStyle='#FF69B4'; ctx.beginPath(); ctx.ellipse(px+pony.width*0.5,py+pony.height*0.35,pony.width*0.3,pony.height*0.3,0,0,Math.PI*2); ctx.fill();
+        // 鬃毛
+        ctx.fillStyle='#FFD700';
+        ctx.beginPath(); ctx.moveTo(px+pony.width*0.35,py+pony.height*0.15); ctx.bezierCurveTo(px+pony.width*0.4,py-pony.height*0.1,px+pony.width*0.55,py-pony.height*0.1,px+pony.width*0.6,py+pony.height*0.1); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(px+pony.width*0.25,py+pony.height*0.25); ctx.bezierCurveTo(px+pony.width*0.2,py+pony.height*0.05,px+pony.width*0.35,py+pony.height*0.05,px+pony.width*0.35,py+pony.height*0.2); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(px+pony.width*0.75,py+pony.height*0.25); ctx.bezierCurveTo(px+pony.width*0.8,py+pony.height*0.05,px+pony.width*0.65,py+pony.height*0.05,px+pony.width*0.65,py+pony.height*0.2); ctx.fill();
+        // 眼睛
+        ctx.fillStyle='#FFF'; ctx.beginPath(); ctx.arc(px+pony.width*0.65,py+pony.height*0.3,pony.width*0.12,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(px+pony.width*0.68,py+pony.height*0.3,pony.width*0.06,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#FFF'; ctx.beginPath(); ctx.arc(px+pony.width*0.7,py+pony.height*0.28,pony.width*0.025,0,Math.PI*2); ctx.fill();
+        // 腮红
+        ctx.fillStyle='#FFB6C1'; ctx.beginPath(); ctx.arc(px+pony.width*0.75,py+pony.height*0.4,pony.width*0.04,0,Math.PI*2); ctx.fill();
+        // 鼻子
+        ctx.fillStyle='#FFC0CB'; ctx.beginPath(); ctx.ellipse(px+pony.width*0.55,py+pony.height*0.45,pony.width*0.08,pony.width*0.04,0,0,Math.PI*2); ctx.fill();
+        // 耳朵
+        ctx.fillStyle='#FFB6C1';
+        ctx.beginPath(); ctx.ellipse(px+pony.width*0.25,py+pony.height*0.5,pony.width*0.06,pony.width*0.04,-0.3,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(px+pony.width*0.75,py+pony.height*0.5,pony.width*0.06,pony.width*0.04,0.3,0,Math.PI*2); ctx.fill();
+        // 蹄子
+        ctx.fillStyle='#FFD700';
+        ctx.beginPath(); ctx.ellipse(px+pony.width*0.35,py+pony.height*0.85,pony.width*0.05,pony.width*0.04,0,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(px+pony.width*0.65,py+pony.height*0.85,pony.width*0.05,pony.width*0.04,0,0,Math.PI*2); ctx.fill();
+
+        ctx.restore();
+    }
+
+    // 绘制小鸟
+    function drawBird(bx, by, bw, bh) {
+        ctx.fillStyle='#FFD700';
+        ctx.beginPath(); ctx.ellipse(bx+bw*0.5,by+bh*0.5,bw*0.35,bh*0.4,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#FFEC8B';
+        ctx.beginPath(); ctx.ellipse(bx+bw*0.5,by+bh*0.35,bw*0.25,bh*0.25,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#000';
+        ctx.beginPath(); ctx.arc(bx+bw*0.65,by+bh*0.45,bw*0.06,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#FFA500';
+        const wa = Math.sin(Date.now()/150)*0.3;
+        ctx.save(); ctx.translate(bx+bw*0.3,by+bh*0.5); ctx.rotate(wa);
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-bw*0.25,-bh*0.3); ctx.lineTo(-bw*0.15,0); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        ctx.save(); ctx.translate(bx+bw*0.3,by+bh*0.5); ctx.rotate(-wa);
+        ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-bw*0.25,bh*0.3); ctx.lineTo(-bw*0.15,0); ctx.closePath(); ctx.fill();
+        ctx.restore();
+    }
+
+    function drawObstacle(o) {
+        ctx.save();
+        switch(o.type) {
+            case 'smallRock':
+                ctx.fillStyle='#8B7355'; ctx.beginPath();
+                ctx.moveTo(o.x,o.y+o.height); ctx.lineTo(o.x+o.width*0.2,o.y+o.height*0.3); ctx.lineTo(o.x+o.width*0.6,o.y); ctx.lineTo(o.x+o.width*0.9,o.y+o.height*0.4); ctx.lineTo(o.x+o.width,o.y+o.height); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#A0826D'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.3,o.y+o.height*0.5); ctx.lineTo(o.x+o.width*0.5,o.y+o.height*0.15); ctx.lineTo(o.x+o.width*0.7,o.y+o.height*0.4); ctx.closePath(); ctx.fill();
+                break;
+            case 'bigRock':
+                ctx.fillStyle='#6B5344'; ctx.beginPath();
+                ctx.moveTo(o.x,o.y+o.height); ctx.lineTo(o.x+o.width*0.15,o.y+o.height*0.2); ctx.lineTo(o.x+o.width*0.5,o.y); ctx.lineTo(o.x+o.width*0.85,o.y+o.height*0.25); ctx.lineTo(o.x+o.width,o.y+o.height); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#8B7355'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.25,o.y+o.height*0.4); ctx.lineTo(o.x+o.width*0.45,o.y+o.height*0.05); ctx.lineTo(o.x+o.width*0.65,o.y+o.height*0.3); ctx.closePath(); ctx.fill();
+                break;
+            case 'smallCactus':
+                ctx.fillStyle='#228B22'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.5,o.y); ctx.lineTo(o.x+o.width*0.6,o.y+o.height*0.4); ctx.lineTo(o.x+o.width,o.y+o.height); ctx.lineTo(o.x,o.y+o.height); ctx.lineTo(o.x+o.width*0.4,o.y+o.height*0.4); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#32CD32'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.5,o.y+o.height*0.15); ctx.lineTo(o.x+o.width*0.55,o.y+o.height*0.4); ctx.lineTo(o.x+o.width*0.45,o.y+o.height*0.4); ctx.closePath(); ctx.fill();
+                break;
+            case 'bigCactus':
+                ctx.fillStyle='#006400'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.5,o.y); ctx.lineTo(o.x+o.width*0.65,o.y+o.height*0.35); ctx.lineTo(o.x+o.width,o.y+o.height); ctx.lineTo(o.x,o.y+o.height); ctx.lineTo(o.x+o.width*0.35,o.y+o.height*0.35); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#228B22'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.5,o.y+o.height*0.1); ctx.lineTo(o.x+o.width*0.6,o.y+o.height*0.35); ctx.lineTo(o.x+o.width*0.4,o.y+o.height*0.35); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#FF4500';
+                ctx.beginPath(); ctx.moveTo(o.x+o.width*0.3,o.y+o.height*0.4); ctx.lineTo(o.x+o.width*0.35,o.y+o.height*0.3); ctx.lineTo(o.x+o.width*0.25,o.y+o.height*0.35); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(o.x+o.width*0.7,o.y+o.height*0.5); ctx.lineTo(o.x+o.width*0.75,o.y+o.height*0.4); ctx.lineTo(o.x+o.width*0.65,o.y+o.height*0.45); ctx.closePath(); ctx.fill();
+                break;
+            case 'bird':
+            case 'lowBirdWithCoin':
+                drawBird(o.x, o.y, o.width, o.height);
+                break;
+            case 'comboRock':
+                // 小石头
+                ctx.fillStyle='#8B7355'; ctx.beginPath();
+                ctx.moveTo(o.x,o.y+o.height); ctx.lineTo(o.x+o.width*0.2,o.y+o.height*0.3); ctx.lineTo(o.x+o.width*0.6,o.y); ctx.lineTo(o.x+o.width*0.9,o.y+o.height*0.4); ctx.lineTo(o.x+o.width,o.y+o.height); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#A0826D'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.3,o.y+o.height*0.5); ctx.lineTo(o.x+o.width*0.5,o.y+o.height*0.15); ctx.lineTo(o.x+o.width*0.7,o.y+o.height*0.4); ctx.closePath(); ctx.fill();
+                // 上方小鸟
+                if(o.birdY) drawBird(o.x+o.width/2-17, o.birdY, 35, 18);
+                break;
+            case 'comboCactus':
+                // 小仙人掌
+                ctx.fillStyle='#228B22'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.5,o.y); ctx.lineTo(o.x+o.width*0.6,o.y+o.height*0.4); ctx.lineTo(o.x+o.width,o.y+o.height); ctx.lineTo(o.x,o.y+o.height); ctx.lineTo(o.x+o.width*0.4,o.y+o.height*0.4); ctx.closePath(); ctx.fill();
+                ctx.fillStyle='#32CD32'; ctx.beginPath();
+                ctx.moveTo(o.x+o.width*0.5,o.y+o.height*0.15); ctx.lineTo(o.x+o.width*0.55,o.y+o.height*0.4); ctx.lineTo(o.x+o.width*0.45,o.y+o.height*0.4); ctx.closePath(); ctx.fill();
+                // 上方小鸟
+                if(o.birdY) drawBird(o.x+o.width/2-17, o.birdY, 35, 18);
+                break;
+        }
+        ctx.restore();
+    }
+
+    function drawCoin(c) {
+        if(c.collected) return;
+        const bounce = Math.sin(Date.now()/200)*3;
+        ctx.save(); ctx.translate(c.x, c.y+bounce);
+        ctx.beginPath(); ctx.arc(0,0,c.radius,0,Math.PI*2);
+        if(c.ctype==='green'){
+            const g=ctx.createRadialGradient(-3,-3,0,0,0,c.radius);
+            g.addColorStop(0,'#00FF00'); g.addColorStop(0.5,'#32CD32'); g.addColorStop(1,'#228B22');
+            ctx.fillStyle=g; ctx.fill(); ctx.strokeStyle='#00FF00'; ctx.lineWidth=2; ctx.stroke();
+            ctx.fillStyle='#FFF'; ctx.font='bold 13px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('G',0,0);
+        } else {
+            const g=ctx.createRadialGradient(-3,-3,0,0,0,c.radius);
+            g.addColorStop(0,'#FFD700'); g.addColorStop(0.5,'#FFA500'); g.addColorStop(1,'#CD853F');
+            ctx.fillStyle=g; ctx.fill(); ctx.strokeStyle='#FFD700'; ctx.lineWidth=2; ctx.stroke();
+            ctx.fillStyle='#FFF'; ctx.font='bold 13px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$',0,0);
+        }
+        ctx.restore();
+    }
+
+    function drawParticles() {
+        particles = particles.filter(p=>p.life>0);
+        particles.forEach(p=>{
+            ctx.fillStyle=`rgba(${p.r},${p.g},${p.b},${p.life})`;
+            ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+            p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.life-=0.025; p.size*=0.97;
         });
+    }
 
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            touchStartY = e.touches[0].clientY;
-            touchStartTime = Date.now();
-            
-            if (gameState === 'start' || gameState === 'gameover') {
-                startGame();
+    function addParticle(x,y,type) {
+        const colors={dust:{r:194,g:178,b:128},rainbow:{r:255,g:105,b:180},coin:{r:255,g:223,b:100},green:{r:50,g:205,b:50}};
+        const c=colors[type]||colors.dust;
+        for(let i=0;i<8;i++) particles.push({x,y,vx:(Math.random()-0.5)*5,vy:(Math.random()-0.5)*4-2,size:Math.random()*3+2,life:1,r:c.r,g:c.g,b:c.b});
+    }
+
+    // ===== 生成 =====
+    function createObstacle() {
+        // 障碍类型：小石头、大石头、小仙人掌、大仙人掌、低空小鸟、低空小鸟+金币、小石头+高空鸟、小仙人掌+高空鸟
+        const types = ['smallRock','bigRock','smallCactus','bigCactus','bird','lowBirdWithCoin','comboRock','comboCactus'];
+        const type = types[Math.floor(Math.random()*types.length)];
+        let w, h, y, birdY;
+
+        if(type==='smallRock'){
+            w=30+Math.random()*10; h=20+Math.random()*14; y=ground.y-h;
+        } else if(type==='bigRock'){
+            w=25+Math.random()*10; h=54; y=ground.y-h;
+        } else if(type==='smallCactus'){
+            w=22+Math.random()*8; h=22+Math.random()*12; y=ground.y-h;
+        } else if(type==='bigCactus'){
+            w=22+Math.random()*8; h=54; y=ground.y-h;
+        } else if(type==='bird'){
+            // 低空小鸟，需要蹲下躲避
+            w=30+Math.random()*10; h=18+Math.random()*5; y=ground.y-40-Math.random()*10;
+        } else if(type==='lowBirdWithCoin'){
+            // 低空小鸟+下方金币，蹲下收集金币
+            w=30+Math.random()*10; h=18+Math.random()*5; y=ground.y-40-Math.random()*10;
+        } else if(type==='comboRock'){
+            // 小石头+高空鸟，一段跳从中间穿过
+            w=30+Math.random()*10; h=20+Math.random()*14; y=ground.y-h; birdY=ground.y-160;
+        } else if(type==='comboCactus'){
+            // 小仙人掌+高空鸟，一段跳从中间穿过
+            w=22+Math.random()*8; h=22+Math.random()*12; y=ground.y-h; birdY=ground.y-160;
+        }
+
+        obstacles.push({x:W+50,y,width:w,height:h,type,birdY});
+
+        // 低空小鸟+金币：在小鸟下方地面放金币
+        if(type==='lowBirdWithCoin'){
+            const ctype = Math.random()<0.25?'green':'gold';
+            coins.push({x:W+50+w/2, y:ground.y-20, radius:12, collected:false, ctype});
+        }
+    }
+
+    function createCoin() {
+        // 三层高度：地面、一段跳、二段跳
+        const yOpts = [
+            ground.y-25,                       // 地面（站着就能收集）
+            ground.y-70-Math.random()*20,      // 一段跳高度
+            ground.y-130-Math.random()*20      // 二段跳高度
+        ];
+        const y = yOpts[Math.floor(Math.random()*yOpts.length)];
+        const ctype = Math.random()<0.25?'green':'gold';
+
+        // 检查是否与障碍物重叠
+        let ok = true;
+        for(const o of obstacles){
+            const cx=W+30, cr=15, ct=y-12, cb=y+12;
+            if(cx+cr>o.x-30 && cx-cr<o.x+o.width+30){
+                if(cb>o.y && ct<o.y+o.height){ ok=false; break; }
+                if(o.birdY && cb>o.birdY && ct<o.birdY+18){ ok=false; break; }
             }
-        }, { passive: false });
+        }
+        if(ok) coins.push({x:W+30,y,radius:12,collected:false,ctype});
+    }
 
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (gameState !== 'playing') return;
-            
-            const touchY = e.touches[0].clientY;
-            const deltaY = touchY - touchStartY;
-            
-            if (deltaY > 30) {
-                crouch(true);
+    // ===== 更新 =====
+    function update() {
+        const prevH = pony.height;
+        pony.height = pony.isCrouching ? pony.crouchH : pony.normalH;
+        if(!pony.isJumping && prevH!==pony.height) pony.y = ground.y - pony.height;
+        if(pony.isCrouching && !pony.isJumping) pony.y = ground.y - pony.height;
+
+        if(pony.isJumping){
+            const gm = pony.isCrouching ? 2.5 : 1;
+            pony.vy += GRAVITY*gm;
+            pony.y += pony.vy;
+            if(pony.y >= ground.y-pony.height){
+                pony.y=ground.y-pony.height; pony.vy=0; pony.isJumping=false; pony.jumpCount=0;
             }
-        }, { passive: false });
+        }
 
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            const touchDuration = Date.now() - touchStartTime;
-            const touchEndY = e.changedTouches[0].clientY;
-            const deltaY = touchEndY - touchStartY;
-            
-            if (gameState === 'playing') {
-                if (deltaY > 30) {
-                    // Swiped down - was crouching
-                    crouch(false);
-                } else if (Math.abs(deltaY) < 20 && touchDuration < 300) {
-                    // Quick tap - jump
-                    jump();
-                }
+        obstacles = obstacles.filter(o=>o.x>-100);
+        obstacles.forEach(o=>o.x-=gameSpeed);
+        coins = coins.filter(c=>c.x>-50&&!c.collected);
+        coins.forEach(c=>c.x-=gameSpeed);
+        clouds.forEach(c=>{c.x-=c.spd; if(c.x<-c.w){c.x=W+c.w;c.y=Math.random()*(ground.y*0.45);}});
+
+        frameCount++;
+        scoreElement.textContent = score;
+
+        if(frameCount%500===0) gameSpeed=Math.min(gameSpeed+0.2,SPEED_MAX);
+
+        const now = Date.now();
+        const intv = 2500-((gameSpeed-SPEED_START)/(SPEED_MAX-SPEED_START))*1300;
+        if(now-lastObstTime>intv){ createObstacle(); lastObstTime=now; }
+        if(now-lastCoinTime>800){ createCoin(); lastCoinTime=now; }
+    }
+
+    // ===== 碰撞 =====
+    function checkCollision() {
+        const hb = { x:pony.x+5, y:pony.y+5, w:pony.width-10, h:pony.height-10 };
+
+        for(const o of obstacles){
+            // 低空小鸟蹲下可躲
+            if((o.type==='bird'||o.type==='lowBirdWithCoin') && pony.isCrouching) continue;
+
+            // 主碰撞体
+            if(hb.x<o.x+o.width && hb.x+hb.w>o.x && hb.y<o.y+o.height && hb.y+hb.h>o.y) return true;
+
+            // 组合障碍的小鸟碰撞
+            if((o.type==='comboRock'||o.type==='comboCactus') && o.birdY){
+                const bx=o.x+o.width/2-17, by=o.birdY, bw=35, bh=18;
+                if(hb.x<bx+bw && hb.x+hb.w>bx && hb.y<by+bh && hb.y+hb.h>by) return true;
             }
-        }, { passive: false });
+        }
 
-        canvas.addEventListener('click', (e) => {
-            if (gameState === 'playing') {
-                jump();
+        // 金币收集
+        for(const c of coins){
+            if(c.collected) continue;
+            const dx=(pony.x+pony.width/2)-c.x, dy=(pony.y+pony.height/2)-c.y;
+            if(Math.sqrt(dx*dx+dy*dy)<c.radius+pony.width/2){
+                c.collected=true;
+                score += c.ctype==='green'?5:2;
+                playSound('coin');
+                addParticle(c.x,c.y,c.ctype==='green'?'green':'coin');
             }
-        });
+        }
+        return false;
+    }
 
-        startBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            startGame();
-        });
-        
-        restartBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            startGame();
-        });
+    // ===== 游戏控制 =====
+    function startGame(){
+        gameState='playing'; score=0; gameSpeed=SPEED_START; frameCount=0;
+        obstacles=[]; coins=[]; particles=[];
+        pony.y=ground.y-pony.height; pony.isJumping=false; pony.jumpCount=0;
+        pony.isCrouching=false; pony.height=pony.normalH;
+        scoreElement.textContent=score;
+        startScreen.classList.add('hidden'); gameOverScreen.classList.add('hidden');
+        lastObstTime=Date.now(); lastCoinTime=Date.now();
+        playSound('start');
+    }
 
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Prevent scrolling on mobile
-        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-        document.body.addEventListener('gesturestart', (e) => e.preventDefault());
-        
-        resizeCanvas();
+    function gameOver(){
+        gameState='gameOver'; playSound('gameOver');
+        if(score>highScore){highScore=score;localStorage.setItem('ponyRunHighScore',highScore);}
+        finalScoreElement.textContent=score; highScoreElement.textContent=highScore;
+        gameOverScreen.classList.remove('hidden');
+    }
+
+    function jump(){
+        if(gameState!=='playing') return;
+        if(!pony.isJumping && !pony.isCrouching){
+            pony.vy=JUMP_FORCE; pony.isJumping=true; pony.jumpCount=1;
+            playSound('jump'); addParticle(pony.x+pony.width/2,pony.y+pony.height,'dust');
+        } else if(pony.isJumping && pony.jumpCount<2){
+            pony.vy=JUMP_FORCE*0.85; pony.jumpCount=2;
+            playSound('doubleJump'); addParticle(pony.x+pony.width/2,pony.y+pony.height/2,'rainbow');
+        }
+    }
+
+    function crouch(on){
+        if(gameState!=='playing') return;
+        if(on && !pony.isJumping) pony.isCrouching=true;
+        else if(!on) pony.isCrouching=false;
+    }
+
+    // ===== 主循环 =====
+    function loop(){
+        ctx.clearRect(0,0,W,H);
+        drawBg();
+        if(gameState==='playing'){ update(); if(checkCollision()) gameOver(); }
+        obstacles.forEach(drawObstacle);
+        coins.forEach(drawCoin);
+        drawPony();
+        drawParticles();
+        requestAnimationFrame(loop);
+    }
+
+    // ===== 输入 =====
+    document.getElementById('startBtn').addEventListener('click',startGame);
+    document.getElementById('restartBtn').addEventListener('click',startGame);
+
+    document.addEventListener('keydown',e=>{
+        if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();gameState!=='playing'?startGame():jump();}
+        if(e.code==='ArrowDown'){e.preventDefault();crouch(true);}
+    });
+    document.addEventListener('keyup',e=>{if(e.code==='ArrowDown')crouch(false);});
+
+    let touchY=0, touching=false;
+    canvas.addEventListener('touchstart',e=>{
+        e.preventDefault(); touchY=e.touches[0].clientY; touching=true;
+        if(gameState!=='playing') startGame();
+    },{passive:false});
+    canvas.addEventListener('touchmove',e=>{
+        e.preventDefault(); if(!touching) return;
+        crouch(e.touches[0].clientY-touchY>30);
+    },{passive:false});
+    canvas.addEventListener('touchend',e=>{
+        e.preventDefault(); touching=false; crouch(false);
+        if(gameState==='playing') jump();
+    },{passive:false});
+    canvas.addEventListener('mousedown',()=>{gameState!=='playing'?startGame():jump();});
+
+    window.addEventListener('resize',resize);
+    resize(); loop();
     </script>
 </body>
 </html>
