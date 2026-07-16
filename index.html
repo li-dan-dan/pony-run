@@ -215,7 +215,7 @@
         <div id="start-screen">
             <div class="panel">
                 <h1>🐴 小马快跑</h1>
-                <p class="subtitle">空格/↑ 跳跃 | ↓/向下滑动 下蹲<br>收集金币获得额外分数！</p>
+                <p class="subtitle">空格/↑ 跳跃(可二段跳) | ↓/向下滑动 下蹲<br>收集金币获得额外分数！</p>
                 <button id="start-btn">🎮 开始游戏</button>
                 <div class="high-score-box">🌟 最高分: <span id="high-score">0</span></div>
             </div>
@@ -270,8 +270,67 @@
             crouchHeight: 35,
             velocityY: 0,
             isJumping: false,
-            isCrouching: false
+            isCrouching: false,
+            jumpCount: 0
         };
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'jump') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'doubleJump') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.12);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'coin') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.08);
+                oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.15);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'gameOver') {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'start') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            }
+        }
 
         const ground = { y: 0, height: 90 };
         let obstacles = [];
@@ -832,6 +891,7 @@
                     pony.y = ground.y - pony.height;
                     pony.velocityY = 0;
                     pony.isJumping = false;
+                    pony.jumpCount = 0;
                 }
             }
             
@@ -892,17 +952,27 @@
                     coins++;
                     score += 50;
                     coinsElement.textContent = coins;
+                    playSound('coin');
                     createParticle(coin.x + coin.size / 2, coin.y + coin.size / 2, 'coin');
                 }
             }
         }
 
         function jump() {
-            if (!pony.isJumping && gameState === 'playing') {
+            if (gameState !== 'playing') return;
+            
+            if (!pony.isJumping && !pony.isCrouching) {
                 pony.velocityY = JUMP_FORCE;
                 pony.isJumping = true;
+                pony.jumpCount = 1;
                 pony.isCrouching = false;
+                playSound('jump');
                 createParticle(pony.x + pony.width / 2, pony.y + pony.height, 'dust');
+            } else if (pony.isJumping && pony.jumpCount < 2) {
+                pony.velocityY = JUMP_FORCE * 0.85;
+                pony.jumpCount = 2;
+                playSound('doubleJump');
+                createParticle(pony.x + pony.width / 2, pony.y + pony.height / 2, 'rainbow');
             }
         }
 
@@ -929,12 +999,14 @@
             pony.velocityY = 0;
             pony.isJumping = false;
             pony.isCrouching = false;
+            pony.jumpCount = 0;
             
             startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
             scoreElement.textContent = score;
             coinsElement.textContent = coins;
-            hint.innerHTML = '⬆️ 点击跳跃 | ⬇️ 向下滑动下蹲';
+            hint.innerHTML = '⬆️ 点击跳跃(可二段跳) | ⬇️ 向下滑动下蹲';
+            playSound('start');
             
             for (let i = 0; i < 3; i++) {
                 clouds.push({
@@ -950,6 +1022,7 @@
 
         function gameOver() {
             gameState = 'gameover';
+            playSound('gameOver');
             
             const finalScore = Math.floor(score);
             if (finalScore > highScore) {
@@ -994,8 +1067,11 @@
                 lastObstacleTime = now;
             }
             
-            if (now - lastCoinTime > 2000) {
+            if (now - lastCoinTime > 1000) {
                 createCoin();
+                if (Math.random() < 0.4) {
+                    setTimeout(createCoin, 300);
+                }
                 lastCoinTime = now;
             }
             
