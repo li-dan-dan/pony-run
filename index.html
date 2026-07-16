@@ -255,10 +255,10 @@
         highScoreElement.textContent = highScore;
         newHighScoreElement.textContent = highScore;
 
-        const GRAVITY = 0.6;
-        const JUMP_FORCE = -14;
-        const GAME_SPEED_INITIAL = 3;
-        const GAME_SPEED_MAX = 12;
+        const GRAVITY = 0.55;
+        const JUMP_FORCE = -13;
+        const GAME_SPEED_INITIAL = 1.5;
+        const GAME_SPEED_MAX = 6;
         let gameSpeed = GAME_SPEED_INITIAL;
         let frameCount = 0;
 
@@ -1079,8 +1079,8 @@
             update();
             
             const now = Date.now();
-            // 障碍物间隔随速度增加而缩短，范围 1800ms ~ 900ms
-            const obstacleInterval = Math.max(900, 1800 - gameSpeed * 75);
+            // 障碍物间隔随速度增加而缩短，范围 2500ms ~ 1200ms
+            const obstacleInterval = Math.max(1200, 2500 - gameSpeed * 200);
             if (now - lastObstacleTime > obstacleInterval) {
                 createObstacle();
                 lastObstacleTime = now;
@@ -1101,12 +1101,12 @@
             
             // 平滑加速：每帧增加少量速度，上限为 GAME_SPEED_MAX
             if (gameSpeed < GAME_SPEED_MAX) {
-                gameSpeed += 0.002;
+                gameSpeed += 0.0008;
             }
             
             // 每500分额外加速一次（保留里程碑特效）
             if (Math.floor(score) % 500 === 0 && Math.floor(score) > 0) {
-                gameSpeed = Math.min(GAME_SPEED_MAX, gameSpeed + 0.3);
+                gameSpeed = Math.min(GAME_SPEED_MAX, gameSpeed + 0.15);
                 createParticle(pony.x + pony.width / 2, pony.y, 'rainbow');
             }
             
