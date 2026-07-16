@@ -210,12 +210,12 @@
             💰 金币: <span id="coins">0</span>
         </div>
 
-        <div class="mobile-hint" id="hint">⬆️ 点击跳跃 | ⬇️ 向下滑动下蹲</div>
+        <div class="mobile-hint" id="hint">⬆️ 跳跃(可二段跳) | ⬇️ 下蹲(空中可加速下落)</div>
 
         <div id="start-screen">
             <div class="panel">
                 <h1>🐴 小马快跑</h1>
-                <p class="subtitle">空格/↑ 跳跃(可二段跳) | ↓/向下滑动 下蹲<br>收集金币获得额外分数！</p>
+                <p class="subtitle">空格/↑ 跳跃(可二段跳) | ↓/向下滑动 下蹲<br>空中下蹲可加速下落躲避飞鸟！<br>收集金币获得额外分数！</p>
                 <button id="start-btn">🎮 开始游戏</button>
                 <div class="high-score-box">🌟 最高分: <span id="high-score">0</span></div>
             </div>
@@ -865,26 +865,42 @@
 
         function createCoin() {
             const size = 22;
+            const x = canvas.width + 50;
             const y = ground.y - Math.random() * 120 - 30;
+            
+            // 检查与障碍物是否重叠
+            for (const o of obstacles) {
+                if (x < o.x + o.width + 30 && x + size + 30 > o.x &&
+                    y < o.y + o.height + 20 && y + size + 20 > o.y) {
+                    return; // 重叠则不生成
+                }
+            }
+            
             coinsList.push({
-                x: canvas.width + 50,
-                y,
-                size,
+                x: x,
+                y: y,
+                size: size,
                 collected: false
             });
         }
 
         function update() {
-            // Handle crouching - adjust height
-            if (pony.isCrouching && !pony.isJumping) {
+            // 根据下蹲状态调整高度
+            if (pony.isCrouching) {
                 pony.height = pony.crouchHeight;
-                pony.y = ground.y - pony.height;
-            } else if (!pony.isCrouching) {
+            } else {
                 pony.height = pony.normalHeight;
             }
             
-            if (!pony.isCrouching || pony.isJumping) {
-                pony.velocityY += GRAVITY;
+            // 地面下蹲时固定位置
+            if (pony.isCrouching && !pony.isJumping) {
+                pony.y = ground.y - pony.height;
+            }
+            
+            // 跳跃中下蹲：加速下落
+            if (pony.isJumping) {
+                const gravityMult = pony.isCrouching ? 2.2 : 1;
+                pony.velocityY += GRAVITY * gravityMult;
                 pony.y += pony.velocityY;
                 
                 if (pony.y >= ground.y - pony.height) {
@@ -977,7 +993,7 @@
         }
 
         function crouch(active) {
-            if (gameState === 'playing' && !pony.isJumping) {
+            if (gameState === 'playing') {
                 pony.isCrouching = active;
             }
         }
@@ -1005,7 +1021,7 @@
             gameOverScreen.classList.add('hidden');
             scoreElement.textContent = score;
             coinsElement.textContent = coins;
-            hint.innerHTML = '⬆️ 点击跳跃(可二段跳) | ⬇️ 向下滑动下蹲';
+            hint.innerHTML = '⬆️ 跳跃(可二段跳) | ⬇️ 下蹲(空中可加速下落)';
             playSound('start');
             
             for (let i = 0; i < 3; i++) {
